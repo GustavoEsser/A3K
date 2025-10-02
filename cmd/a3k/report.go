@@ -46,8 +46,14 @@ func generateReport(clientset *kubernetes.Clientset) error {
         return fmt.Errorf("error analyzing cluster events: %v", err)
     }
 
+    // Get images audit markdown
+    imagesMD, err := GenerateImagesAuditMarkdown(clientset)
+    if err != nil {
+        return fmt.Errorf("error generating images audit: %v", err)
+    }
+
     // Save the report
-    return saveReportToFile(clusterInfo, nodes, totalCPU, totalMemory, resources, eventsSummary)
+    return saveReportToFile(clusterInfo, nodes, totalCPU, totalMemory, resources, eventsSummary, imagesMD)
 }
 
 func checkContainerResources(containers []corev1.Container, _, _, _ string) (bool, bool) {
@@ -150,7 +156,7 @@ func getNodeMetrics(clientset *kubernetes.Clientset) ([]nodeInfoStruct, string, 
 	return nodeList, totalCPU, totalMemory, nil
 }
 
-func saveReportToFile(clusterInfo *ClusterInfo, nodes []nodeInfoStruct, totalCPU, totalMemory string, resources []WorkloadResource, eventsSummary *EventSummary) error {
+func saveReportToFile(clusterInfo *ClusterInfo, nodes []nodeInfoStruct, totalCPU, totalMemory string, resources []WorkloadResource, eventsSummary *EventSummary, imagesMarkdown string) error {
 	homeDir, err := os.UserHomeDir()
 	if err != nil {
 		return fmt.Errorf("error getting home directory: %v", err)
@@ -169,7 +175,6 @@ func saveReportToFile(clusterInfo *ClusterInfo, nodes []nodeInfoStruct, totalCPU
 		return fmt.Errorf("error creating report file: %v", err)
 	}
 	defer file.Close()
-
 	// Start building the report content
 	reportContent := "# A3K Cluster Report\n"
 	reportContent += "*Generated on " + time.Now().Format(time.RFC1123) + "*\n\n"
@@ -184,6 +189,11 @@ func saveReportToFile(clusterInfo *ClusterInfo, nodes []nodeInfoStruct, totalCPU
 
 	// Add events summary
 	reportContent += FormatEventSummaryMarkdown(eventsSummary)
+
+	// Add images audit
+	if imagesMarkdown != "" {
+		reportContent += "\n" + imagesMarkdown + "\n"
+	}
 
 	// Add node details
 	reportContent += "## Node Details\n\n"
