@@ -1,22 +1,54 @@
 package main
 
 import (
-	"flag"
-	"fmt"
-	"os"
-	"path/filepath"
+    "flag"
+    "fmt"
+    "os"
+    "path/filepath"
+    "strings"
 
-	"k8s.io/client-go/kubernetes"
-	"k8s.io/client-go/tools/clientcmd"
+    "k8s.io/client-go/kubernetes"
+    "k8s.io/client-go/tools/clientcmd"
 )
 
 func main() {
+    // Pre-scan args to allow flags after subcommand (e.g., `a3k report --cluster-name X`)
+    // Standard flag parsing stops at first non-flag; we support both forms: --key value and --key=value
+    for i := 1; i < len(os.Args); i++ {
+        arg := os.Args[i]
+        if arg == "--cluster-name" {
+            if i+1 < len(os.Args) {
+                os.Setenv("A3K_CLUSTER_NAME", os.Args[i+1])
+                i++
+            }
+            continue
+        }
+        if strings.HasPrefix(arg, "--cluster-name=") {
+            os.Setenv("A3K_CLUSTER_NAME", strings.TrimPrefix(arg, "--cluster-name="))
+            continue
+        }
+        if arg == "--author" {
+            if i+1 < len(os.Args) {
+                os.Setenv("A3K_AUTHOR", os.Args[i+1])
+                i++
+            }
+            continue
+        }
+        if strings.HasPrefix(arg, "--author=") {
+            os.Setenv("A3K_AUTHOR", strings.TrimPrefix(arg, "--author="))
+            continue
+        }
+    }
+
     // Initialize command line flags
     kubeconfig := flag.String("kubeconfig", "", "path to the kubeconfig file (default is $HOME/.kube/config)")
     help := flag.Bool("help", false, "show help message")
     // Output mode: -o raw or --output raw disables gum styling
     output := flag.String("o", "", "output mode (use 'raw' to disable styling)")
     flag.StringVar(output, "output", "", "same as -o")
+    // Report metadata
+    clusterName := flag.String("cluster-name", "", "cluster name to display in the report header")
+    author := flag.String("author", "", "author name to display in the report header")
     flag.Parse()
 
     // Apply output mode
@@ -28,6 +60,14 @@ func main() {
     if *help {
         showHelp()
         os.Exit(0)
+    }
+
+    // Export optional report metadata to environment variables for downstream usage
+    if *clusterName != "" {
+        os.Setenv("A3K_CLUSTER_NAME", *clusterName)
+    }
+    if *author != "" {
+        os.Setenv("A3K_AUTHOR", *author)
     }
 
 	// Use default kubeconfig if not specified

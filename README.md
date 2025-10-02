@@ -33,7 +33,7 @@ Generate a comprehensive report about your Kubernetes cluster:
 
 ```bash
 # Using default kubeconfig (~/.kube/config)
-./a3k report
+./a3k report --cluster-name "Nome_do_Cluster" --author "Nome_do_Autor" ; echo $A3K_CLUSTER_NAME $A3K_AUTHOR
 
 # Or specify a custom kubeconfig
 ./a3k --kubeconfig /path/to/kubeconfig report
