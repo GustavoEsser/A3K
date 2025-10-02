@@ -22,11 +22,11 @@ type nodeInfoStruct struct {
 }
 
 func generateReport(clientset *kubernetes.Clientset) error {
-	// Get cluster information
-	clusterInfo, err := GetClusterInfo(clientset)
-	if err != nil {
-		return fmt.Errorf("error getting cluster info: %v", err)
-	}
+    // Get cluster information
+    clusterInfo, err := GetClusterInfo(clientset)
+    if err != nil {
+        return fmt.Errorf("error getting cluster info: %v", err)
+    }
 
 	// Get node metrics
 	nodes, totalCPU, totalMemory, err := getNodeMetrics(clientset)
@@ -34,14 +34,20 @@ func generateReport(clientset *kubernetes.Clientset) error {
 		return fmt.Errorf("error getting node metrics: %v", err)
 	}
 
-	// Get resource analysis
-	resources, err := AnalyzeWorkloadResources(clientset)
-	if err != nil {
-		return fmt.Errorf("error analyzing workload resources: %v", err)
-	}
+    // Get resource analysis
+    resources, err := AnalyzeWorkloadResources(clientset)
+    if err != nil {
+        return fmt.Errorf("error analyzing workload resources: %v", err)
+    }
 
-	// Save the report
-	return saveReportToFile(clusterInfo, nodes, totalCPU, totalMemory, resources)
+    // Get events summary
+    eventsSummary, err := AnalyzeClusterEvents(clientset)
+    if err != nil {
+        return fmt.Errorf("error analyzing cluster events: %v", err)
+    }
+
+    // Save the report
+    return saveReportToFile(clusterInfo, nodes, totalCPU, totalMemory, resources, eventsSummary)
 }
 
 func checkContainerResources(containers []corev1.Container, _, _, _ string) (bool, bool) {
@@ -144,7 +150,7 @@ func getNodeMetrics(clientset *kubernetes.Clientset) ([]nodeInfoStruct, string, 
 	return nodeList, totalCPU, totalMemory, nil
 }
 
-func saveReportToFile(clusterInfo *ClusterInfo, nodes []nodeInfoStruct, totalCPU, totalMemory string, resources []WorkloadResource) error {
+func saveReportToFile(clusterInfo *ClusterInfo, nodes []nodeInfoStruct, totalCPU, totalMemory string, resources []WorkloadResource, eventsSummary *EventSummary) error {
 	homeDir, err := os.UserHomeDir()
 	if err != nil {
 		return fmt.Errorf("error getting home directory: %v", err)
@@ -175,6 +181,9 @@ func saveReportToFile(clusterInfo *ClusterInfo, nodes []nodeInfoStruct, totalCPU
 	reportContent += "## Resource Analysis\n\n"
 	reportContent += "### Workloads Missing Resource Requests/Limits\n"
 	reportContent += FormatResourceTable(resources) + "\n"
+
+	// Add events summary
+	reportContent += FormatEventSummaryMarkdown(eventsSummary)
 
 	// Add node details
 	reportContent += "## Node Details\n\n"

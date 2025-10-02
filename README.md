@@ -71,6 +71,7 @@ Usage:
 Available Commands:
   workloads   Show information about workloads (Deployments, StatefulSets, DaemonSets, CronJobs, Pods)
   nodes       Show information about nodes (count, CPU, Memory, machine types)
+  events      Show cluster events summary (warnings, reasons, objects)
   report      Generate a comprehensive markdown report of your Kubernetes cluster.
   help        Show this help message
 
@@ -91,6 +92,12 @@ Show information about nodes:
 
 ```bash
 a3k nodes
+```
+
+Show cluster events summary:
+
+```bash
+a3k events
 ```
 
 Generate a comprehensive markdown report:

@@ -64,6 +64,8 @@ func runCommand(clientset *kubernetes.Clientset, args []string) error {
 		return getWorkloads(clientset)
 	case "nodes":
 		return getNodes(clientset)
+	case "events":
+		return getEvents(clientset)
 	case "report":
 		return generateReport(clientset)
 	case "help", "--help", "-h":
@@ -83,6 +85,7 @@ Usage:
 Available Commands:
   workloads   Show information about workloads (Deployments, StatefulSets, DaemonSets, CronJobs, Pods)
   nodes       Show information about nodes (count, CPU, Memory, machine types)
+  events      Show cluster events summary (warnings, reasons, objects)
   report      Generate a comprehensive markdown report of the cluster
   help        Show this help message
 
