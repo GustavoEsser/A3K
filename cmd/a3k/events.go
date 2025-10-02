@@ -170,42 +170,48 @@ func getEvents(clientset *kubernetes.Clientset) error {
         return err
     }
 
-    fmt.Println("=== Cluster Events Overview ===")
-    fmt.Printf("Total Events:   %d\n", summary.Total)
-    fmt.Printf("Warnings:       %d\n", summary.Warnings)
-    fmt.Printf("Normals:        %d\n\n", summary.Normals)
+    printHeader("Cluster Events Overview")
+    printTable([]string{"Type", "Count"}, [][]string{
+        {"Total Events", fmt.Sprintf("%d", summary.Total)},
+        {"Warnings", fmt.Sprintf("%d", summary.Warnings)},
+        {"Normals", fmt.Sprintf("%d", summary.Normals)},
+    })
 
-    fmt.Println("Top Warning Reasons:")
+    printSubheader("Top Warning Reasons")
     if len(summary.TopWarningReasons) == 0 {
-        fmt.Println("(none)")
+        printLine("(none)")
     } else {
+        rows := make([][]string, 0, len(summary.TopWarningReasons))
         for _, r := range summary.TopWarningReasons {
-            fmt.Printf("- %s: %d\n", r.Key, r.Count)
+            rows = append(rows, []string{r.Key, fmt.Sprintf("%d", r.Count)})
         }
+        printTable([]string{"Reason", "Count"}, rows)
     }
-    fmt.Println()
 
-    fmt.Println("Top Affected Objects (warnings):")
+    printSubheader("Top Affected Objects (warnings)")
     if len(summary.TopWarningObjects) == 0 {
-        fmt.Println("(none)")
+        printLine("(none)")
     } else {
+        rows := make([][]string, 0, len(summary.TopWarningObjects))
         for _, o := range summary.TopWarningObjects {
-            fmt.Printf("- %s: %d\n", o.Key, o.Count)
+            rows = append(rows, []string{o.Key, fmt.Sprintf("%d", o.Count)})
         }
+        printTable([]string{"Object", "Count"}, rows)
     }
-    fmt.Println()
 
-    fmt.Println("Recent Warning Events:")
+    printSubheader("Recent Warning Events")
     if len(summary.RecentWarnings) == 0 {
-        fmt.Println("(none)")
+        printLine("(none)")
     } else {
+        rows := make([][]string, 0, len(summary.RecentWarnings))
         for _, e := range summary.RecentWarnings {
             msg := e.Message
-            if len(msg) > 120 {
-                msg = msg[:117] + "..."
+            if len(msg) > 80 {
+                msg = msg[:77] + "..."
             }
-            fmt.Printf("- %s | %s/%s %s | %s: %s\n", e.Time.Format(time.RFC3339), e.Namespace, e.Name, e.Kind, e.Reason, msg)
+            rows = append(rows, []string{e.Time.Format(time.RFC3339), fmt.Sprintf("%s/%s %s", e.Namespace, e.Name, e.Kind), e.Reason, msg})
         }
+        printTable([]string{"Time", "Object", "Reason", "Message"}, rows)
     }
 
     return nil

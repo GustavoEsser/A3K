@@ -1,11 +1,11 @@
 package main
 
 import (
-	"context"
-	"fmt"
+    "context"
+    "fmt"
 
-	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
-	"k8s.io/client-go/kubernetes"
+    metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+    "k8s.io/client-go/kubernetes"
 )
 
 func getWorkloads(clientset *kubernetes.Clientset) error {
@@ -62,13 +62,18 @@ func getWorkloads(clientset *kubernetes.Clientset) error {
 		totalPods += len(pods.Items)
 	}
 
-	// Print results
-	fmt.Println("=== Workloads Overview ===")
-	fmt.Printf("Deployments:  %d\n", totalDeployments)
-	fmt.Printf("StatefulSets: %d\n", totalStatefulSets)
-	fmt.Printf("DaemonSets:   %d\n", totalDaemonSets)
-	fmt.Printf("CronJobs:     %d\n", totalCronJobs)
-	fmt.Printf("Running Pods: %d\n", totalPods)
+    // Print results (styled when gum is available)
+    printHeader("Workloads Overview")
+    printTable(
+        []string{"Resource", "Count"},
+        [][]string{
+            {"Deployments", fmt.Sprintf("%d", totalDeployments)},
+            {"StatefulSets", fmt.Sprintf("%d", totalStatefulSets)},
+            {"DaemonSets", fmt.Sprintf("%d", totalDaemonSets)},
+            {"CronJobs", fmt.Sprintf("%d", totalCronJobs)},
+            {"Running Pods", fmt.Sprintf("%d", totalPods)},
+        },
+    )
 
 	return nil
 }

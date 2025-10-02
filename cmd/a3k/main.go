@@ -11,15 +11,24 @@ import (
 )
 
 func main() {
-	// Initialize command line flags
-	kubeconfig := flag.String("kubeconfig", "", "path to the kubeconfig file (default is $HOME/.kube/config)")
-	help := flag.Bool("help", false, "show help message")
-	flag.Parse()
+    // Initialize command line flags
+    kubeconfig := flag.String("kubeconfig", "", "path to the kubeconfig file (default is $HOME/.kube/config)")
+    help := flag.Bool("help", false, "show help message")
+    // Output mode: -o raw or --output raw disables gum styling
+    output := flag.String("o", "", "output mode (use 'raw' to disable styling)")
+    flag.StringVar(output, "output", "", "same as -o")
+    flag.Parse()
 
-	if *help {
-		showHelp()
-		os.Exit(0)
-	}
+    // Apply output mode
+    if *output == "raw" {
+        // Disable gum styling globally
+        os.Setenv("A3K_NO_GUM", "1")
+    }
+
+    if *help {
+        showHelp()
+        os.Exit(0)
+    }
 
 	// Use default kubeconfig if not specified
 	if *kubeconfig == "" {
@@ -77,7 +86,7 @@ func runCommand(clientset *kubernetes.Clientset, args []string) error {
 }
 
 func showHelp() {
-	helpText := `A3K - Assessment · Audit · Analyzer for Kubernetes
+    helpText := `A3K - Assessment · Audit · Analyzer for Kubernetes
 
 Usage:
   a3k [command] [flags]
@@ -92,6 +101,8 @@ Available Commands:
 Flags:
   --kubeconfig string   Path to kubeconfig file (default is $HOME/.kube/config)
   --help                Show help message
+  -o raw                Output mode; 'raw' disables styling
+  --output raw          Same as -o
 `
-	fmt.Print(helpText)
+    fmt.Print(helpText)
 }
