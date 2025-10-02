@@ -74,6 +74,7 @@ Available Commands:
   events      Show cluster events summary (warnings, reasons, objects)
   health      Show consolidated cluster and workloads health overview
   report      Generate a comprehensive markdown report of your Kubernetes cluster.
+  images      Audit images (Bitnami vs BitnamiLegacy)
   help        Show this help message
 
 Flags:
@@ -125,6 +126,14 @@ Force plain, non-interactive output:
 
 ```bash
 a3k -o raw health
+```
+
+Audit images for Bitnami usage (and BitnamiLegacy):
+
+```bash
+a3k images
+# Plain output (useful for CI/scripts)
+a3k -o raw images
 ```
 
 ## License
