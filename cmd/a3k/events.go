@@ -126,14 +126,15 @@ func FormatEventSummaryMarkdown(s *EventSummary) string {
     if s == nil {
         return ""
     }
-    out := "## Events Summary\n\n"
+    // Contextual description for the Events section (Portuguese)
+    out := "Os eventos no Kubernetes são registros de ocorrências que descrevem mudanças de estado, alertas e informações relevantes sobre objetos do cluster, como pods, nós e deployments. Eles funcionam como um histórico de diagnósticos em tempo real, ajudando a identificar problemas, acompanhar falhas de execução e entender o comportamento dos workloads ao longo do tempo.\n\n"
     out += fmt.Sprintf("- Total Events: %d\n", s.Total)
     out += fmt.Sprintf("- Warning Events: %d\n", s.Warnings)
     out += fmt.Sprintf("- Normal Events: %d\n\n", s.Normals)
 
-    out += "### Top Warning Reasons\n"
+    out += "### Principais Motivos de Warning\n"
     if len(s.TopWarningReasons) == 0 {
-        out += "(none)\n\n"
+        out += "(nenhum)\n\n"
     } else {
         for _, r := range s.TopWarningReasons {
             out += fmt.Sprintf("- %s: %d\n", r.Key, r.Count)
@@ -141,9 +142,9 @@ func FormatEventSummaryMarkdown(s *EventSummary) string {
         out += "\n"
     }
 
-    out += "### Top Affected Objects (warnings)\n"
+    out += "### Objetos Mais Afetados (warnings)\n"
     if len(s.TopWarningObjects) == 0 {
-        out += "(none)\n\n"
+        out += "(nenhum)\n\n"
     } else {
         for _, o := range s.TopWarningObjects {
             out += fmt.Sprintf("- %s: %d\n", o.Key, o.Count)
@@ -151,9 +152,9 @@ func FormatEventSummaryMarkdown(s *EventSummary) string {
         out += "\n"
     }
 
-    out += "### Recent Warning Events\n"
+    out += "### Eventos de Warning Recentes\n"
     if len(s.RecentWarnings) == 0 {
-        out += "(none)\n"
+        out += "(nenhum)\n"
     } else {
         for _, e := range s.RecentWarnings {
             out += fmt.Sprintf("- %s | %s/%s %s: %s\n", e.Time.Format(time.RFC3339), e.Namespace, e.Name, e.Kind, e.Reason)

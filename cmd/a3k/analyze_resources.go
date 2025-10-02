@@ -137,11 +137,11 @@ func getStatusEmoji(status ResourceStatus) string {
 	case status.HasRequests && status.HasLimits:
 		return "✅"
 	case status.HasRequests:
-		return "⚠️ (Missing Limits)"
+		return "⚠️ (Faltando Limits))"
 	case status.HasLimits:
-		return "⚠️ (Missing Requests)"
+		return "⚠️ (Faltando Requests)"
 	default:
-		return "❌ (Missing Both)"
+		return "❌ (Faltando Ambos)"
 	}
 }
 
