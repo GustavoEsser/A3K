@@ -72,12 +72,15 @@ Available Commands:
   workloads   Show information about workloads (Deployments, StatefulSets, DaemonSets, CronJobs, Pods)
   nodes       Show information about nodes (count, CPU, Memory, machine types)
   events      Show cluster events summary (warnings, reasons, objects)
+  health      Show consolidated cluster and workloads health overview
   report      Generate a comprehensive markdown report of your Kubernetes cluster.
   help        Show this help message
 
 Flags:
   --kubeconfig string   Path to kubeconfig file (default is $KUBECONFIG or $HOME/.kube/config)
   --help                Show help message
+  -o raw                Output mode; 'raw' disables styling
+  --output raw          Same as -o
 ```
 
 ### Examples
@@ -100,6 +103,12 @@ Show cluster events summary:
 a3k events
 ```
 
+Show consolidated cluster health overview:
+
+```bash
+a3k health
+```
+
 Generate a comprehensive markdown report:
 
 ```bash
@@ -110,6 +119,12 @@ Specify a custom kubeconfig file:
 
 ```bash
 a3k --kubeconfig /path/to/kubeconfig workloads
+```
+
+Force plain, non-interactive output:
+
+```bash
+a3k -o raw health
 ```
 
 ## License

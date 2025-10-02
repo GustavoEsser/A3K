@@ -63,23 +63,27 @@ func main() {
 }
 
 func runCommand(clientset *kubernetes.Clientset, args []string) error {
-	if len(args) == 0 {
-		showHelp()
-		return nil
-	}
+    if len(args) == 0 {
+        showHelp()
+        return nil
+    }
 
-	switch args[0] {
-	case "workloads":
-		return getWorkloads(clientset)
-	case "nodes":
-		return getNodes(clientset)
-	case "events":
-		return getEvents(clientset)
-	case "report":
-		return generateReport(clientset)
-	case "help", "--help", "-h":
-		showHelp()
-		return nil
+    switch args[0] {
+    case "workloads":
+        return getWorkloads(clientset)
+    case "nodes":
+        return getNodes(clientset)
+    case "events":
+        return getEvents(clientset)
+    case "health":
+        return getHealth(clientset)
+    case "report":
+        return generateReport(clientset)
+    case "images":
+        return auditImages(clientset)
+    case "help", "--help", "-h":
+        showHelp()
+        return nil
 	default:
 		return fmt.Errorf("unknown command: %s", args[0])
 	}
@@ -95,7 +99,9 @@ Available Commands:
   workloads   Show information about workloads (Deployments, StatefulSets, DaemonSets, CronJobs, Pods)
   nodes       Show information about nodes (count, CPU, Memory, machine types)
   events      Show cluster events summary (warnings, reasons, objects)
+  health      Show consolidated cluster and workloads health overview
   report      Generate a comprehensive markdown report of the cluster
+  images      Audit images (Bitnami vs BitnamiLegacy)
   help        Show this help message
 
 Flags:
