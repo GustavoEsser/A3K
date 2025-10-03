@@ -35,6 +35,18 @@ func generateReport(clientset *kubernetes.Clientset) error {
         return fmt.Errorf("error getting node metrics: %v", err)
     }
 
+    // Workloads summary counts (cluster-wide)
+    workloadsMD, err := GenerateWorkloadsInfoMarkdown(clientset)
+    if err != nil {
+        return fmt.Errorf("error generating workloads summary: %v", err)
+    }
+
+    // Ingresses overview (grouped by namespace)
+    ingressMD, err := GenerateIngressesMarkdown(clientset)
+    if err != nil {
+        return fmt.Errorf("error generating ingresses section: %v", err)
+    }
+
     // Workload resource analysis
     resources, err := AnalyzeWorkloadResources(clientset)
     if err != nil {
@@ -53,7 +65,7 @@ func generateReport(clientset *kubernetes.Clientset) error {
         return fmt.Errorf("error generating images audit: %v", err)
     }
 
-    return saveReportToFile(clusterInfo, nodes, totalCPU, totalMemory, resources, eventsSummary, imagesMD)
+    return saveReportToFile(clusterInfo, workloadsMD, nodes, totalCPU, totalMemory, ingressMD, resources, eventsSummary, imagesMD)
 }
 
 func getNodeMetrics(clientset *kubernetes.Clientset) ([]nodeInfoStruct, string, string, error) {
@@ -103,7 +115,7 @@ func formatBytesHelper(bytes int64) string {
 }
 
 // saveReportToFile renders the markdown and writes it to ~/a3k-reports/<timestamp>.md
-func saveReportToFile(clusterInfo *ClusterInfo, nodes []nodeInfoStruct, totalCPU, totalMemory string, resources []WorkloadResource, eventsSummary *EventSummary, imagesMarkdown string) error {
+func saveReportToFile(clusterInfo *ClusterInfo, workloadsMarkdown string, nodes []nodeInfoStruct, totalCPU, totalMemory string, ingressMarkdown string, resources []WorkloadResource, eventsSummary *EventSummary, imagesMarkdown string) error {
     homeDir, err := os.UserHomeDir()
     if err != nil {
         return fmt.Errorf("error getting home directory: %v", err)
@@ -145,7 +157,9 @@ func saveReportToFile(clusterInfo *ClusterInfo, nodes []nodeInfoStruct, totalCPU
     // Table of contents
     reportContent += "## Sumário\n\n"
     reportContent += "- [Visão Geral do Cluster](#visão-geral-do-cluster-)\n"
+    reportContent += "- [Resumo de Workloads](#resumo-de-workloads-)\n"
     reportContent += "- [Detalhes dos Nodes](#detalhes-dos-nodes-)\n"
+    reportContent += "- [Ingresses por Namespace](#ingresses-por-namespace-)\n"
     reportContent += "- [Análise de Recursos](#análise-de-recursos-)\n"
     reportContent += "- [Resumo de Eventos](#resumo-de-eventos-)\n"
     reportContent += "- [Auditoria de Imagens](#auditoria-de-imagens-bitnami-vs-bitnamilegacy)\n\n"
@@ -155,7 +169,13 @@ func saveReportToFile(clusterInfo *ClusterInfo, nodes []nodeInfoStruct, totalCPU
     reportContent += FormatClusterInfo(clusterInfo) + "\n"
     reportContent += "---\n\n"
 
-    // Node details (immediately after overview)
+    // Workloads summary (immediately after overview)
+    if workloadsMarkdown != "" {
+        reportContent += workloadsMarkdown + "\n"
+        reportContent += "---\n\n"
+    }
+
+    // Node details (after workloads summary)
     reportContent += "## Detalhes dos Nodes 🖥️\n\n"
     reportContent += "Esta seção apresenta um panorama dos nodes que compõem o cluster, incluindo recursos de CPU e memória disponíveis, sistema operacional em uso, versão do kubelet e provedor. Essas informações permitem avaliar a capacidade total de infraestrutura, identificar a distribuição de workloads e apoiar decisões relacionadas a escalabilidade, manutenção e otimização do ambiente Kubernetes.\n\n"
     reportContent += "### Resumo de Recursos\n\n"
@@ -170,6 +190,12 @@ func saveReportToFile(clusterInfo *ClusterInfo, nodes []nodeInfoStruct, totalCPU
         reportContent += fmt.Sprintf("| %s | %s | %s | %s | %s | %s |\n", n.Name, n.CPU, n.Memory, n.OSImage, n.Kubelet, n.Provider)
     }
     reportContent += "---\n\n"
+
+    // Ingresses section (immediately after nodes)
+    if ingressMarkdown != "" {
+        reportContent += ingressMarkdown + "\n"
+        reportContent += "---\n\n"
+    }
 
     // Resource analysis
     reportContent += "## Análise de Recursos 📦\n\n"

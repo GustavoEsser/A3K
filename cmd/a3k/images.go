@@ -13,16 +13,34 @@ import (
 // vendorFromImage returns image vendor markers ("bitnami", "bitnamilegacy") or empty string
 func vendorFromImage(image string) string {
     lower := strings.ToLower(image)
-    // Check legacy first to avoid matching the substring "bitnami" inside bitnamilegacy
+    // Detect legacy explicitly anywhere in the ref
     if strings.Contains(lower, "bitnamilegacy") {
         return "bitnamilegacy"
     }
-    // Detect any segment named bitnami (with or without registry prefix)
+
+    // Only consider Bitnami if the image is from docker.io/bitnami/*
+    // Parse registry and path: [registry]/[org]/[repo]:tag@digest
     parts := strings.Split(lower, "/")
-    for _, p := range parts {
-        if p == "bitnami" || strings.HasPrefix(p, "bitnami-") || strings.Contains(p, "bitnami") {
-            return "bitnami"
-        }
+    if len(parts) == 0 {
+        return ""
+    }
+
+    // Determine registry: if first part has a '.' or ':' or equals 'localhost', it's an explicit registry.
+    registry := "docker.io"
+    pathStart := 0
+    if strings.Contains(parts[0], ".") || strings.Contains(parts[0], ":") || parts[0] == "localhost" {
+        registry = parts[0]
+        pathStart = 1
+    }
+
+    // We need at least org/repo after registry (implicit or explicit)
+    if len(parts[pathStart:]) < 2 {
+        return ""
+    }
+    org := parts[pathStart]
+
+    if registry == "docker.io" && org == "bitnami" {
+        return "bitnami"
     }
     return ""
 }
@@ -77,6 +95,7 @@ func GenerateImagesAuditMarkdown(clientset *kubernetes.Clientset) (string, error
 
     var sb strings.Builder
     sb.WriteString("## Images Audit (Bitnami vs BitnamiLegacy)\n\n")
+    sb.WriteString("Esta seção apresenta os pods que utilizam imagens Bitnami como runtime dentro do cluster. É importante destacar que o repositório público da Bitnami foi descontinuado, o que reforça a necessidade de revisar essas dependências, planejar a migração para repositórios mantidos e assegurar a continuidade, segurança e padronização do ambiente Kubernetes.\n\n")
     // Summary
     sb.WriteString("### Summary\n\n")
     sb.WriteString(buildMarkdownTable([]string{"Category", "Count"}, [][]string{
