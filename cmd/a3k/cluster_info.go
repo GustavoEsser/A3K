@@ -113,11 +113,9 @@ func detectRegion(node corev1.Node) string {
 	return "Unknown"
 }
 
-// FormatClusterInfo formats cluster information as markdown
+// FormatClusterInfo formats cluster information as a markdown table (no heading — caller provides it)
 func FormatClusterInfo(info *ClusterInfo) string {
-	return fmt.Sprintf(`## Cluster Information
-
-| Property        | Value          |
+	return fmt.Sprintf(`| Property        | Value          |
 |----------------|---------------|
 | Provider       | %-13s |
 | Region         | %-13s |

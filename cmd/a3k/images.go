@@ -130,7 +130,15 @@ func GenerateImagesAuditMarkdown(clientset *kubernetes.Clientset) (string, error
     return sb.String(), nil
 }
 
-// buildMarkdownTable renders a simple GitHub-flavored markdown table.
+// escapeCell sanitizes a value for safe embedding in a Markdown table cell.
+func escapeCell(s string) string {
+    s = strings.ReplaceAll(s, "|", "\\|")
+    s = strings.ReplaceAll(s, "\n", " ")
+    s = strings.ReplaceAll(s, "\r", "")
+    return s
+}
+
+// buildMarkdownTable renders a GitHub-flavored markdown table, escaping cell values.
 func buildMarkdownTable(headers []string, rows [][]string) string {
     var sb strings.Builder
     // Header
@@ -146,10 +154,14 @@ func buildMarkdownTable(headers []string, rows [][]string) string {
         sb.WriteString("---")
     }
     sb.WriteString(" |\n")
-    // Rows
+    // Rows — escape each cell to prevent broken table structure
     for _, r := range rows {
+        escaped := make([]string, len(r))
+        for i, cell := range r {
+            escaped[i] = escapeCell(cell)
+        }
         sb.WriteString("| ")
-        sb.WriteString(strings.Join(r, " | "))
+        sb.WriteString(strings.Join(escaped, " | "))
         sb.WriteString(" |\n")
     }
     return sb.String()
