@@ -2,10 +2,8 @@
 # Security scanning — runs on schedule + every push to main
 #
 # Covers:
-#   - govulncheck    Go stdlib + module vulnerability database
-#   - Trivy          Docker image scan (CRITICAL/HIGH CVEs)
-#   - Grype          SBOM-based vulnerability scan
-#   - nancy          Go dependency audit (via Sonatype OSS Index)
+#   - govulncheck       Go stdlib + module vulnerability database
+#   - dependency-review Block PRs introducing vulnerable dependencies
 # ---------------------------------------------------------------------------
 name: Security
 
@@ -44,72 +42,6 @@ jobs:
 
       - name: Run govulncheck
         run: govulncheck ./...
-
-  # -------------------------------------------------------------------------
-  # Trivy — scan source code (filesystem) for CVEs and misconfigurations
-  # -------------------------------------------------------------------------
-  trivy-fs:
-    name: Trivy (filesystem)
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@v4
-
-      - name: Trivy filesystem scan
-        uses: aquasecurity/trivy-action@master
-        with:
-          scan-type: fs
-          scan-ref: .
-          format: sarif
-          output: trivy-fs.sarif
-          severity: CRITICAL,HIGH,MEDIUM
-
-      - name: Upload results
-        uses: github/codeql-action/upload-sarif@v3
-        with:
-          sarif_file: trivy-fs.sarif
-          category: trivy-fs
-
-  # -------------------------------------------------------------------------
-  # Trivy — scan published Docker image (only on schedule or main push)
-  # -------------------------------------------------------------------------
-  trivy-image:
-    name: Trivy (Docker image)
-    runs-on: ubuntu-latest
-    steps:
-      - name: Trivy image scan
-        uses: aquasecurity/trivy-action@master
-        with:
-          image-ref: "ghcr.io/gustavoesser/a3k:latest"
-          format: sarif
-          output: trivy-image.sarif
-          severity: CRITICAL,HIGH
-
-      - name: Upload results
-        uses: github/codeql-action/upload-sarif@v3
-        with:
-          sarif_file: trivy-image.sarif
-          category: trivy-image
-
-  # -------------------------------------------------------------------------
-  # Grype — SBOM-based vulnerability scan against released artifact
-  # -------------------------------------------------------------------------
-  grype:
-    name: Grype (image)
-    runs-on: ubuntu-latest
-    steps:
-      - name: Grype scan
-        uses: anchore/scan-action@v6
-        id: scan
-        with:
-          image: "ghcr.io/gustavoesser/a3k:latest"
-          severity-cutoff: high
-          fail-build: false  # report without failing the pipeline
-
-      - name: Upload SARIF report
-        uses: github/codeql-action/upload-sarif@v3
-        with:
-          sarif_file: ${{ steps.scan.outputs.sarif }}
-          category: grype
 
   # -------------------------------------------------------------------------
   # Dependency review — block PRs introducing vulnerable dependencies

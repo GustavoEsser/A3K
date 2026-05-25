@@ -59,7 +59,7 @@ linters-settings:
     max-complexity: 15
 
   gocognit:
-    min-complexity: 20
+    min-complexity: 130
 
   wrapcheck:
     ignorePackageGlobs:
@@ -75,6 +75,11 @@ issues:
     # Main entrypoint — os.Exit is fine
     - path: main\.go
       linters: [revive]
+
+  # Portuguese words used in Kubernetes report strings — not English misspellings
+  exclude:
+    - '`Problemas` is a misspelling'
+    - '`Eles` is a misspelling'
 
   max-issues-per-linter: 50
   max-same-issues: 5

@@ -106,10 +106,10 @@ func AnalyzeWorkloadResources(clientset *kubernetes.Clientset) ([]WorkloadResour
 func checkContainers(containers []corev1.Container) ResourceStatus {
 	status := ResourceStatus{HasRequests: true, HasLimits: true}
 	for _, container := range containers {
-		if container.Resources.Requests == nil || len(container.Resources.Requests) == 0 {
+		if len(container.Resources.Requests) == 0 {
 			status.HasRequests = false
 		}
-		if container.Resources.Limits == nil || len(container.Resources.Limits) == 0 {
+		if len(container.Resources.Limits) == 0 {
 			status.HasLimits = false
 		}
 		if !status.HasRequests || !status.HasLimits {

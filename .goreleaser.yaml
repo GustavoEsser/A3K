@@ -9,7 +9,6 @@ project_name: a3k
 before:
   hooks:
     - go mod tidy
-    - go generate ./...
 
 # ---------------------------------------------------------------------------
 # Builds — multi-platform static binaries
@@ -86,43 +85,6 @@ signs:
     signature: "${artifact}.sig"
     artifacts: checksum
     output: true
-
-# ---------------------------------------------------------------------------
-# Docker Signs — keyless cosign for OCI manifests
-# ---------------------------------------------------------------------------
-docker_signs:
-  - cmd: cosign
-    args:
-      - sign
-      - "--yes"
-      - "${artifact}"
-    artifacts: manifests
-    output: true
-
-# ---------------------------------------------------------------------------
-# Docker Images — OCI multi-arch via dockers_v2
-# Handles linux/amd64 + linux/arm64 in a single entry (no separate manifests needed)
-# ---------------------------------------------------------------------------
-dockers_v2:
-  - ids: [a3k]
-    dockerfile: Dockerfile
-    images:
-      - "ghcr.io/gustavoesser/a3k"
-    tags:
-      - "{{ .Tag }}"
-      - "v{{ .Major }}"
-      - "latest"
-    platforms:
-      - linux/amd64
-      - linux/arm64
-    labels:
-      org.opencontainers.image.created: "{{ .Date }}"
-      org.opencontainers.image.title: "{{ .ProjectName }}"
-      org.opencontainers.image.revision: "{{ .FullCommit }}"
-      org.opencontainers.image.version: "{{ .Version }}"
-      org.opencontainers.image.source: "https://github.com/GustavoEsser/a3k"
-      org.opencontainers.image.licenses: "MIT"
-      org.opencontainers.image.vendor: "CloudScript"
 
 # ---------------------------------------------------------------------------
 # Linux packages — .deb / .rpm / .apk
@@ -217,11 +179,6 @@ release:
     ```bash
     brew tap GustavoEsser/tap
     brew install a3k
-    ```
-
-    **Docker**
-    ```bash
-    docker pull ghcr.io/gustavoesser/a3k:{{ .Tag }}
     ```
 
     **Go install**
