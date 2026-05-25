@@ -1,0 +1,130 @@
+# ---------------------------------------------------------------------------
+# CI — runs on every push to main and on pull requests
+# ---------------------------------------------------------------------------
+# SECURITY NOTE: For production, pin all action versions to their SHA digest.
+# Use: https://github.com/renovatebot/renovate or
+#      https://github.com/actions/dependency-review-action
+# ---------------------------------------------------------------------------
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+
+# Minimal permissions — principle of least privilege
+permissions:
+  contents: read
+
+# Cancel in-progress runs for the same branch/PR
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  # -------------------------------------------------------------------------
+  # Build — verify the project compiles on all target platforms
+  # -------------------------------------------------------------------------
+  build:
+    name: Build
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-go@v5
+        with:
+          go-version-file: go.mod
+          cache: true
+
+      - name: Build (linux/amd64)
+        run: CGO_ENABLED=0 go build -trimpath -o /dev/null .
+
+      - name: Build (linux/arm64)
+        run: CGO_ENABLED=0 GOARCH=arm64 go build -trimpath -o /dev/null .
+
+      - name: Build (darwin/arm64)
+        run: CGO_ENABLED=0 GOOS=darwin GOARCH=arm64 go build -trimpath -o /dev/null .
+
+  # -------------------------------------------------------------------------
+  # Test
+  # -------------------------------------------------------------------------
+  test:
+    name: Test
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-go@v5
+        with:
+          go-version-file: go.mod
+          cache: true
+
+      - name: Run tests
+        run: go test -v -race -coverprofile=coverage.out ./...
+
+      - name: Upload coverage
+        uses: actions/upload-artifact@v4
+        with:
+          name: coverage
+          path: coverage.out
+          retention-days: 7
+
+  # -------------------------------------------------------------------------
+  # Lint
+  # -------------------------------------------------------------------------
+  lint:
+    name: Lint
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-go@v5
+        with:
+          go-version-file: go.mod
+          cache: false  # golangci-lint manages its own cache
+
+      - name: golangci-lint
+        uses: golangci/golangci-lint-action@v6
+        with:
+          version: latest
+          args: --timeout=5m
+
+  # -------------------------------------------------------------------------
+  # Vulnerability scan — Go stdlib + dependencies
+  # -------------------------------------------------------------------------
+  govulncheck:
+    name: govulncheck
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-go@v5
+        with:
+          go-version-file: go.mod
+          cache: true
+
+      - name: Install govulncheck
+        run: go install golang.org/x/vuln/cmd/govulncheck@latest
+
+      - name: Run govulncheck
+        run: govulncheck ./...
+
+  # -------------------------------------------------------------------------
+  # Validate GoReleaser config (no actual release)
+  # -------------------------------------------------------------------------
+  goreleaser-check:
+    name: GoReleaser config check
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-go@v5
+        with:
+          go-version-file: go.mod
+          cache: true
+
+      - uses: goreleaser/goreleaser-action@v6
+        with:
+          version: latest
+          args: check

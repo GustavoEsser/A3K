@@ -1,4 +1,4 @@
-package main
+package k8s
 
 import (
 	"context"
@@ -10,30 +10,30 @@ import (
 	"k8s.io/client-go/kubernetes"
 )
 
-// ClusterInfo contains information about the Kubernetes cluster
+// ClusterInfo contains information about the Kubernetes cluster.
 type ClusterInfo struct {
-	Provider    string
-	Region      string
-	K8sVersion  string
-	Uptime      string
-	NodeCount   int
+	Provider   string
+	Region     string
+	K8sVersion string
+	Uptime     string
+	NodeCount  int
 }
 
-// GetClusterInfo gathers information about the Kubernetes cluster
+// GetClusterInfo gathers information about the Kubernetes cluster.
 func GetClusterInfo(clientset *kubernetes.Clientset) (*ClusterInfo, error) {
 	info := &ClusterInfo{}
 
 	// Get cluster version
 	version, err := clientset.ServerVersion()
 	if err != nil {
-		return nil, fmt.Errorf("error getting cluster version: %v", err)
+		return nil, fmt.Errorf("error getting cluster version: %w", err)
 	}
 	info.K8sVersion = version.GitVersion
 
 	// Get nodes to determine provider and region
-	nodes, err := clientset.CoreV1().Nodes().List(context.TODO(), metav1.ListOptions{})
+	nodes, err := clientset.CoreV1().Nodes().List(context.Background(), metav1.ListOptions{})
 	if err != nil {
-		return nil, fmt.Errorf("error getting nodes: %v", err)
+		return nil, fmt.Errorf("error getting nodes: %w", err)
 	}
 
 	info.NodeCount = len(nodes.Items)
@@ -62,13 +62,11 @@ func GetClusterInfo(clientset *kubernetes.Clientset) (*ClusterInfo, error) {
 	return info, nil
 }
 
-// detectProvider detects the cloud provider from node spec
+// detectProvider detects the cloud provider from node spec.
 func detectProvider(node corev1.Node) string {
-	// Check providerID first
 	providerID := node.Spec.ProviderID
 	switch {
 	case providerID == "":
-		// Try to detect from node spec
 		if _, ok := node.Labels["node.kubernetes.io/instance-type"]; ok {
 			return "AWS (EKS)"
 		} else if _, ok := node.Labels["cloud.google.com/gke-nodepool"]; ok {
@@ -77,20 +75,19 @@ func detectProvider(node corev1.Node) string {
 			return "Azure (AKS)"
 		}
 		return "Unknown (On-premises?)"
-	case providerID[:5] == "aws:":
+	case len(providerID) >= 5 && providerID[:5] == "aws:/":
 		return "AWS (EKS)"
-	case providerID[:4] == "gce:":
+	case len(providerID) >= 4 && providerID[:4] == "gce:":
 		return "GCP (GKE)"
-	case providerID[:8] == "azure://":
+	case len(providerID) >= 8 && providerID[:8] == "azure://":
 		return "Azure (AKS)"
 	default:
 		return "Unknown"
 	}
 }
 
-// detectRegion detects the region from node spec
+// detectRegion detects the region from node spec.
 func detectRegion(node corev1.Node) string {
-	// Check common cloud provider labels
 	if region, ok := node.Labels["topology.kubernetes.io/region"]; ok {
 		return region
 	}
@@ -98,22 +95,27 @@ func detectRegion(node corev1.Node) string {
 		return region
 	}
 	if zone, ok := node.Labels["topology.kubernetes.io/zone"]; ok {
-		// Extract region from zone (e.g., us-central1-a -> us-central1)
-		return zone[:len(zone)-2]
+		if len(zone) > 2 {
+			return zone[:len(zone)-2]
+		}
+		return zone
 	}
 	if zone, ok := node.Labels["failure-domain.beta.kubernetes.io/zone"]; ok {
-		return zone[:len(zone)-2]
+		if len(zone) > 2 {
+			return zone[:len(zone)-2]
+		}
+		return zone
 	}
-
-	// Check provider-specific labels
 	if region, ok := node.Labels["topology.ebs.csi.aws.com/zone"]; ok {
-		return region[:len(region)-1] // Remove the last character (zone letter)
+		if len(region) > 1 {
+			return region[:len(region)-1]
+		}
+		return region
 	}
-
 	return "Unknown"
 }
 
-// FormatClusterInfo formats cluster information as a markdown table (no heading — caller provides it)
+// FormatClusterInfo formats cluster information as a markdown table (no heading — caller provides it).
 func FormatClusterInfo(info *ClusterInfo) string {
 	return fmt.Sprintf(`| Property        | Value          |
 |----------------|---------------|

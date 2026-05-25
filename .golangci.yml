@@ -1,0 +1,80 @@
+# golangci-lint configuration for A3K
+# Docs: https://golangci-lint.run/usage/configuration/
+run:
+  timeout: 5m
+  tests: true
+
+output:
+  formats:
+    - format: colored-line-number
+  sort-results: true
+
+linters:
+  enable:
+    # Correctness
+    - errcheck        # unchecked errors
+    - govet           # go vet
+    - staticcheck     # staticcheck SA rules
+    - ineffassign     # assignments with no effect
+    - unused          # unused code
+
+    # Security
+    - gosec           # security issues (G101..G602)
+
+    # Style / quality
+    - revive          # opinionated golint replacement
+    - misspell        # spelling mistakes in comments/strings
+    - gofmt           # formatting
+    - goimports       # import ordering
+    - gocritic        # various checks
+
+    # Error handling
+    - wrapcheck       # errors from external packages should be wrapped
+    - errorlint       # common error handling mistakes
+
+    # Context
+    - noctx           # http requests without context
+
+    # Maintainability
+    - cyclop          # cyclomatic complexity
+    - gocognit        # cognitive complexity
+    - maintidx        # maintainability index
+
+linters-settings:
+  errcheck:
+    check-type-assertions: true
+    check-blank: false  # blank identifier assignments are intentional (viper binds)
+
+  gosec:
+    excludes:
+      - G304  # file inclusion via variable — intentional for kubeconfig path
+
+  revive:
+    rules:
+      - name: exported
+        arguments:
+          - disableStutteringCheck
+
+  cyclop:
+    max-complexity: 15
+
+  gocognit:
+    min-complexity: 20
+
+  wrapcheck:
+    ignorePackageGlobs:
+      - "github.com/flysecurity/a3k/*"
+      - "github.com/spf13/cobra"
+
+issues:
+  exclude-rules:
+    # Tests have different standards
+    - path: _test\.go
+      linters: [gosec, errcheck, wrapcheck]
+
+    # Main entrypoint — os.Exit is fine
+    - path: main\.go
+      linters: [revive]
+
+  max-issues-per-linter: 50
+  max-same-issues: 5

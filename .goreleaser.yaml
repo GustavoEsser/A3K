@@ -1,0 +1,240 @@
+# yaml-language-server: $schema=https://goreleaser.com/static/schema.json
+version: 2
+
+project_name: a3k
+
+# ---------------------------------------------------------------------------
+# Pre-build hooks
+# ---------------------------------------------------------------------------
+before:
+  hooks:
+    - go mod tidy
+    - go generate ./...
+
+# ---------------------------------------------------------------------------
+# Builds — multi-platform static binaries
+# ---------------------------------------------------------------------------
+builds:
+  - id: a3k
+    main: .
+    binary: a3k
+    env:
+      - CGO_ENABLED=0
+    goos:
+      - linux
+      - darwin
+      - windows
+    goarch:
+      - amd64
+      - arm64
+    ignore:
+      - goos: windows
+        goarch: arm64
+    ldflags:
+      - -s -w
+      - -X github.com/flysecurity/a3k/cmd.Version={{ .Version }}
+      - -X github.com/flysecurity/a3k/cmd.Commit={{ .ShortCommit }}
+      - -X github.com/flysecurity/a3k/cmd.Date={{ .Date }}
+    flags:
+      - -trimpath
+    mod_timestamp: "{{ .CommitTimestamp }}"
+
+# ---------------------------------------------------------------------------
+# Archives — formats (plural) as per goreleaser v2 schema
+# ---------------------------------------------------------------------------
+archives:
+  - id: default
+    ids: [a3k]
+    name_template: "{{ .ProjectName }}_{{ .Version }}_{{ .Os }}_{{ .Arch }}"
+    formats: [tar.gz]
+    format_overrides:
+      - goos: windows
+        formats: [zip]
+    files:
+      - README.md
+      - LICENSE
+      - configs/config.yaml
+
+# ---------------------------------------------------------------------------
+# Checksum
+# ---------------------------------------------------------------------------
+checksum:
+  name_template: checksums.txt
+  algorithm: sha256
+
+# ---------------------------------------------------------------------------
+# SBOM — Software Bill of Materials (Syft)
+# ---------------------------------------------------------------------------
+sboms:
+  - id: archive-sbom
+    artifacts: archive
+    documents:
+      - "{{ .ProjectName }}_{{ .Version }}_{{ .Os }}_{{ .Arch }}.sbom.spdx.json"
+
+# ---------------------------------------------------------------------------
+# Signs — keyless cosign via GitHub OIDC (checksum file)
+# ---------------------------------------------------------------------------
+signs:
+  - cmd: cosign
+    certificate: "${artifact}.pem"
+    args:
+      - sign-blob
+      - "--output-certificate=${certificate}"
+      - "--output-signature=${signature}"
+      - "${artifact}"
+      - "--yes"
+    signature: "${artifact}.sig"
+    artifacts: checksum
+    output: true
+
+# ---------------------------------------------------------------------------
+# Docker Signs — keyless cosign for OCI manifests
+# ---------------------------------------------------------------------------
+docker_signs:
+  - cmd: cosign
+    args:
+      - sign
+      - "--yes"
+      - "${artifact}"
+    artifacts: manifests
+    output: true
+
+# ---------------------------------------------------------------------------
+# Docker Images — OCI multi-arch via dockers_v2
+# Handles linux/amd64 + linux/arm64 in a single entry (no separate manifests needed)
+# ---------------------------------------------------------------------------
+dockers_v2:
+  - ids: [a3k]
+    dockerfile: Dockerfile
+    images:
+      - "ghcr.io/gustavoesser/a3k"
+    tags:
+      - "{{ .Tag }}"
+      - "v{{ .Major }}"
+      - "latest"
+    platforms:
+      - linux/amd64
+      - linux/arm64
+    labels:
+      org.opencontainers.image.created: "{{ .Date }}"
+      org.opencontainers.image.title: "{{ .ProjectName }}"
+      org.opencontainers.image.revision: "{{ .FullCommit }}"
+      org.opencontainers.image.version: "{{ .Version }}"
+      org.opencontainers.image.source: "https://github.com/GustavoEsser/a3k"
+      org.opencontainers.image.licenses: "MIT"
+      org.opencontainers.image.vendor: "CloudScript"
+
+# ---------------------------------------------------------------------------
+# Linux packages — .deb / .rpm / .apk
+# ---------------------------------------------------------------------------
+nfpms:
+  - package_name: a3k
+    ids: [a3k]
+    homepage: https://github.com/GustavoEsser/a3k
+    maintainer: Gustavo Esser <gustavo.esser@cloudscript.com.br>
+    description: Assessment · Audit · Analyzer for Kubernetes
+    license: MIT
+    formats:
+      - deb
+      - rpm
+      - apk
+    contents:
+      - src: ./configs/config.yaml
+        dst: /etc/a3k/config.yaml
+        type: "config|noreplace"
+
+# ---------------------------------------------------------------------------
+# Homebrew Tap — Cask distribution for CLI tool
+# (uses homebrew_casks, the current API in goreleaser v2)
+# Users install with: brew install GustavoEsser/tap/a3k
+# ---------------------------------------------------------------------------
+homebrew_casks:
+  - name: a3k
+    ids: [default]
+    repository:
+      owner: GustavoEsser
+      name: homebrew-tap
+      token: "{{ .Env.HOMEBREW_TAP_GITHUB_TOKEN }}"
+    commit_author:
+      name: goreleaserbot
+      email: bot@goreleaser.com
+    commit_msg_template: "chore: brew cask update for {{ .ProjectName }} {{ .Tag }}"
+    homepage: https://github.com/GustavoEsser/a3k
+    description: Assessment · Audit · Analyzer for Kubernetes — CLI for cluster analysis and reporting
+    skip_upload: auto
+    binaries:
+      - a3k
+
+# ---------------------------------------------------------------------------
+# Changelog
+# ---------------------------------------------------------------------------
+changelog:
+  sort: asc
+  use: github
+  filters:
+    exclude:
+      - "^docs:"
+      - "^test:"
+      - "^chore:"
+      - "Merge pull request"
+      - "Merge branch"
+      - typo
+  groups:
+    - title: "✨ New Features"
+      regexp: '^.*?feat(\(.+\))??!?:.+$'
+      order: 0
+    - title: "🐛 Bug Fixes"
+      regexp: '^.*?(fix|refactor)(\(.+\))??!?:.+$'
+      order: 1
+    - title: "🔒 Security"
+      regexp: '^.*?sec(urity)?(\(.+\))??!?:.+$'
+      order: 2
+    - title: "⚙️ Other Changes"
+      order: 999
+
+# ---------------------------------------------------------------------------
+# Release
+# ---------------------------------------------------------------------------
+release:
+  github:
+    owner: GustavoEsser
+    name: a3k
+  draft: false
+  prerelease: auto
+  mode: append
+  name_template: "{{ .Tag }}"
+  header: |
+    ## A3K {{ .Tag }} 🚀
+
+    See the full [CHANGELOG](https://github.com/GustavoEsser/a3k/blob/main/CHANGELOG.md) for details.
+  footer: |
+    ---
+    **Full Changelog**: https://github.com/GustavoEsser/a3k/compare/{{ .PreviousTag }}...{{ .Tag }}
+
+    ### 📦 Install
+
+    **Homebrew**
+    ```bash
+    brew tap GustavoEsser/tap
+    brew install a3k
+    ```
+
+    **Docker**
+    ```bash
+    docker pull ghcr.io/gustavoesser/a3k:{{ .Tag }}
+    ```
+
+    **Go install**
+    ```bash
+    go install github.com/flysecurity/a3k@{{ .Tag }}
+    ```
+
+    ### 🔐 Verify (cosign keyless)
+    ```bash
+    cosign verify-blob \
+      --certificate-identity-regexp="https://github.com/GustavoEsser/a3k/.github/workflows/release.yml" \
+      --certificate-oidc-issuer="https://token.actions.githubusercontent.com" \
+      --cert checksums.txt.pem \
+      --signature checksums.txt.sig \
+      checksums.txt
+    ```

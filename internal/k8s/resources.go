@@ -1,4 +1,4 @@
-package main
+package k8s
 
 import (
 	"context"
@@ -9,13 +9,13 @@ import (
 	"k8s.io/client-go/kubernetes"
 )
 
-// ResourceStatus represents the status of resource requests/limits for a container
+// ResourceStatus represents the status of resource requests/limits for a container.
 type ResourceStatus struct {
 	HasRequests bool
 	HasLimits   bool
 }
 
-// WorkloadResource represents a workload's resource configuration
+// WorkloadResource represents a workload's resource configuration.
 type WorkloadResource struct {
 	Type      string
 	Name      string
@@ -23,23 +23,21 @@ type WorkloadResource struct {
 	Status    string
 }
 
-// AnalyzeWorkloadResources analyzes all workloads and returns a list of those with missing requests/limits
+// AnalyzeWorkloadResources analyzes all workloads and returns a list of those with missing requests/limits.
 func AnalyzeWorkloadResources(clientset *kubernetes.Clientset) ([]WorkloadResource, error) {
+	ctx := context.Background()
 	var results []WorkloadResource
 
-	// Get all namespaces
-	namespaces, err := clientset.CoreV1().Namespaces().List(context.TODO(), metav1.ListOptions{})
+	namespaces, err := clientset.CoreV1().Namespaces().List(ctx, metav1.ListOptions{})
 	if err != nil {
-		return nil, fmt.Errorf("error getting namespaces: %v", err)
+		return nil, fmt.Errorf("error getting namespaces: %w", err)
 	}
 
-	// Analyze Deployments
 	for _, ns := range namespaces.Items {
-		deployments, err := clientset.AppsV1().Deployments(ns.Name).List(context.TODO(), metav1.ListOptions{})
+		deployments, err := clientset.AppsV1().Deployments(ns.Name).List(ctx, metav1.ListOptions{})
 		if err != nil {
-			return nil, fmt.Errorf("error getting deployments in namespace %s: %v", ns.Name, err)
+			return nil, fmt.Errorf("error getting deployments in namespace %s: %w", ns.Name, err)
 		}
-
 		for _, dep := range deployments.Items {
 			status := checkContainers(dep.Spec.Template.Spec.Containers)
 			if !status.HasRequests || !status.HasLimits {
@@ -52,12 +50,10 @@ func AnalyzeWorkloadResources(clientset *kubernetes.Clientset) ([]WorkloadResour
 			}
 		}
 
-		// Analyze StatefulSets
-		statefulSets, err := clientset.AppsV1().StatefulSets(ns.Name).List(context.TODO(), metav1.ListOptions{})
+		statefulSets, err := clientset.AppsV1().StatefulSets(ns.Name).List(ctx, metav1.ListOptions{})
 		if err != nil {
-			return nil, fmt.Errorf("error getting statefulsets in namespace %s: %v", ns.Name, err)
+			return nil, fmt.Errorf("error getting statefulsets in namespace %s: %w", ns.Name, err)
 		}
-
 		for _, ss := range statefulSets.Items {
 			status := checkContainers(ss.Spec.Template.Spec.Containers)
 			if !status.HasRequests || !status.HasLimits {
@@ -70,12 +66,10 @@ func AnalyzeWorkloadResources(clientset *kubernetes.Clientset) ([]WorkloadResour
 			}
 		}
 
-		// Analyze DaemonSets
-		daemonSets, err := clientset.AppsV1().DaemonSets(ns.Name).List(context.TODO(), metav1.ListOptions{})
+		daemonSets, err := clientset.AppsV1().DaemonSets(ns.Name).List(ctx, metav1.ListOptions{})
 		if err != nil {
-			return nil, fmt.Errorf("error getting daemonsets in namespace %s: %v", ns.Name, err)
+			return nil, fmt.Errorf("error getting daemonsets in namespace %s: %w", ns.Name, err)
 		}
-
 		for _, ds := range daemonSets.Items {
 			status := checkContainers(ds.Spec.Template.Spec.Containers)
 			if !status.HasRequests || !status.HasLimits {
@@ -88,13 +82,10 @@ func AnalyzeWorkloadResources(clientset *kubernetes.Clientset) ([]WorkloadResour
 			}
 		}
 
-		// Analyze CronJobs
-		cronJobs, err := clientset.BatchV1().CronJobs(ns.Name).List(context.TODO(), metav1.ListOptions{})
+		cronJobs, err := clientset.BatchV1().CronJobs(ns.Name).List(ctx, metav1.ListOptions{})
 		if err != nil {
-			// Skip if batch/v1 CronJobs are not available
 			continue
 		}
-
 		for _, cj := range cronJobs.Items {
 			status := checkContainers(cj.Spec.JobTemplate.Spec.Template.Spec.Containers)
 			if !status.HasRequests || !status.HasLimits {
@@ -111,10 +102,9 @@ func AnalyzeWorkloadResources(clientset *kubernetes.Clientset) ([]WorkloadResour
 	return results, nil
 }
 
-// checkContainers checks all containers in a pod spec for resource requests/limits
+// checkContainers checks all containers in a pod spec for resource requests/limits.
 func checkContainers(containers []corev1.Container) ResourceStatus {
 	status := ResourceStatus{HasRequests: true, HasLimits: true}
-
 	for _, container := range containers {
 		if container.Resources.Requests == nil || len(container.Resources.Requests) == 0 {
 			status.HasRequests = false
@@ -122,16 +112,14 @@ func checkContainers(containers []corev1.Container) ResourceStatus {
 		if container.Resources.Limits == nil || len(container.Resources.Limits) == 0 {
 			status.HasLimits = false
 		}
-		// If we find any container missing either, we can stop checking
 		if !status.HasRequests || !status.HasLimits {
 			break
 		}
 	}
-
 	return status
 }
 
-// getStatusEmoji returns an emoji status based on the resource status
+// getStatusEmoji returns an emoji status based on the resource status.
 func getStatusEmoji(status ResourceStatus) string {
 	switch {
 	case status.HasRequests && status.HasLimits:
@@ -145,7 +133,7 @@ func getStatusEmoji(status ResourceStatus) string {
 	}
 }
 
-// FormatResourceTable formats the workload resources as a markdown table
+// FormatResourceTable formats the workload resources as a markdown table.
 func FormatResourceTable(resources []WorkloadResource) string {
 	if len(resources) == 0 {
 		return "✅ All workloads have proper resource requests and limits configured.\n"
@@ -153,10 +141,8 @@ func FormatResourceTable(resources []WorkloadResource) string {
 
 	table := "| Type | Name | Namespace | Status |\n"
 	table += "|------|------|-----------|--------|\n"
-
 	for _, r := range resources {
 		table += fmt.Sprintf("| %s | %s | %s | %s |\n", r.Type, r.Name, r.Namespace, r.Status)
 	}
-
 	return table
 }

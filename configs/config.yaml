@@ -1,0 +1,9 @@
+# A3K configuration file
+# Place at ~/.a3k.yaml or ./a3k.yaml
+
+# kubeconfig: ~/.kube/config
+output: table
+# namespace: ""
+report_path: ~/a3k-reports
+no_color: false
+verbose: false
