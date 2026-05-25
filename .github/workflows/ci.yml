@@ -31,6 +31,9 @@ jobs:
           go-version-file: go.mod
           cache: true
 
+      - name: go vet
+        run: go vet ./...
+
       - name: Build (linux/amd64)
         run: CGO_ENABLED=0 go build -trimpath -o /dev/null .
 
@@ -92,11 +95,6 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
-
-      - uses: actions/setup-go@v5
-        with:
-          go-version-file: go.mod
-          cache: true
 
       - uses: goreleaser/goreleaser-action@v6
         with:

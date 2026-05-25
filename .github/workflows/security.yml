@@ -1,33 +1,21 @@
 # ---------------------------------------------------------------------------
-# Security scanning — runs on schedule + every push to main
-#
-# Covers:
-#   - dependency-review  Block PRs introducing vulnerable dependencies
+# Security — dependency review on every PR targeting main
+# Blocks merges that introduce deps with HIGH/CRITICAL CVEs or banned licenses
 # ---------------------------------------------------------------------------
 name: Security
 
 on:
-  schedule:
-    - cron: "0 8 * * 1"  # every Monday at 08:00 UTC
-  push:
+  pull_request:
     branches: [main]
-  workflow_dispatch:
 
 permissions:
   contents: read
-
-concurrency:
-  group: security-${{ github.ref }}
-  cancel-in-progress: true
+  pull-requests: write  # permite comentar o resultado no PR
 
 jobs:
-  # -------------------------------------------------------------------------
-  # Dependency review — block PRs introducing vulnerable dependencies
-  # -------------------------------------------------------------------------
   dependency-review:
     name: Dependency review
     runs-on: ubuntu-latest
-    if: github.event_name == 'pull_request'
     steps:
       - uses: actions/checkout@v4
 
