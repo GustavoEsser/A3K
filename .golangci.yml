@@ -76,10 +76,18 @@ issues:
     - path: main\.go
       linters: [revive]
 
-  # Portuguese words used in Kubernetes report strings — not English misspellings
+    # internal/k8s functions process many Kubernetes resource types in sequence —
+    # cyclomatic complexity is inherent to the domain, not a code quality issue
+    - path: internal/k8s/
+      linters: [cyclop]
+
+  # Portuguese words in Kubernetes report strings — not English misspellings
   exclude:
     - '`Problemas` is a misspelling'
     - '`Eles` is a misspelling'
+    - '`contextos` is a misspelling'
+    - '`Autor` is a misspelling'
+    - '`operacional` is a misspelling'
 
   max-issues-per-linter: 50
   max-same-issues: 5
