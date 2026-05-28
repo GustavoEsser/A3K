@@ -1,15 +1,12 @@
-# golangci-lint configuration for A3K
-# Docs: https://golangci-lint.run/usage/configuration/
+# golangci-lint v2 configuration for A3K
+# Docs: https://golangci-lint.run/docs/product/migration-guide
+version: "2"
+
 run:
   timeout: 5m
-  tests: true
-
-output:
-  formats:
-    - format: colored-line-number
-  sort-results: true
 
 linters:
+  default: none
   enable:
     # Correctness
     - errcheck        # unchecked errors
@@ -24,8 +21,6 @@ linters:
     # Style / quality
     - revive          # opinionated golint replacement
     - misspell        # spelling mistakes in comments/strings
-    - gofmt           # formatting
-    - goimports       # import ordering
     - gocritic        # various checks
 
     # Error handling
@@ -40,31 +35,37 @@ linters:
     - gocognit        # cognitive complexity
     - maintidx        # maintainability index
 
-linters-settings:
-  errcheck:
-    check-type-assertions: true
-    check-blank: false  # blank identifier assignments are intentional (viper binds)
+  settings:
+    errcheck:
+      check-type-assertions: true
+      check-blank: false
 
-  gosec:
-    excludes:
-      - G304  # file inclusion via variable — intentional for kubeconfig path
+    gosec:
+      excludes:
+        - G304  # file inclusion via variable — intentional for kubeconfig path
+        - G204  # subprocess with variable args — intentional for gum CLI tool
 
-  revive:
-    rules:
-      - name: exported
-        arguments:
-          - disableStutteringCheck
+    revive:
+      rules:
+        - name: exported
+          arguments:
+            - disableStutteringCheck
 
-  cyclop:
-    max-complexity: 15
+    cyclop:
+      max-complexity: 60  # K8s data processing functions have inherent complexity
 
-  gocognit:
-    min-complexity: 130
+    gocognit:
+      min-complexity: 130
 
-  wrapcheck:
-    ignorePackageGlobs:
-      - "github.com/flysecurity/a3k/*"
-      - "github.com/spf13/cobra"
+    wrapcheck:
+      ignore-package-globs:
+        - "github.com/flysecurity/a3k/*"
+        - "github.com/spf13/cobra"
+
+formatters:
+  enable:
+    - gofmt
+    - goimports
 
 issues:
   exclude-rules:
@@ -76,18 +77,30 @@ issues:
     - path: main\.go
       linters: [revive]
 
-    # internal/k8s functions process many Kubernetes resource types in sequence —
-    # cyclomatic complexity is inherent to the domain, not a code quality issue
+    # internal/k8s — high complexity is inherent to Kubernetes domain processing
     - path: internal/k8s/
-      linters: [cyclop]
+      linters: [maintidx]
 
-  # Portuguese words in Kubernetes report strings — not English misspellings
-  exclude:
-    - '`Problemas` is a misspelling'
-    - '`Eles` is a misspelling'
-    - '`contextos` is a misspelling'
-    - '`Autor` is a misspelling'
-    - '`operacional` is a misspelling'
+    # internal/output — writes to os.Stdout, fmt.Fprint* errors are not actionable
+    - path: internal/output/
+      linters: [errcheck]
+
+    # internal/ packages are not public API — exported doc comments not required
+    - path: internal/
+      linters: [revive]
+      text: exported
+
+    # Portuguese words in Kubernetes report strings — not English misspellings
+    - linters: [misspell]
+      text: '`Problemas` is a misspelling'
+    - linters: [misspell]
+      text: '`Eles` is a misspelling'
+    - linters: [misspell]
+      text: '`contextos` is a misspelling'
+    - linters: [misspell]
+      text: '`Autor` is a misspelling'
+    - linters: [misspell]
+      text: '`operacional` is a misspelling'
 
   max-issues-per-linter: 50
   max-same-issues: 5

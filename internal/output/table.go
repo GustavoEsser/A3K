@@ -2,6 +2,7 @@ package output
 
 import (
 	"bytes"
+	"context"
 	"fmt"
 	"io"
 	"os"
@@ -15,10 +16,12 @@ type TableRenderer struct {
 	w       io.Writer
 }
 
+// NewTableRenderer creates a TableRenderer writing to stdout.
 func NewTableRenderer(noColor bool) *TableRenderer {
 	return &TableRenderer{noColor: noColor, w: os.Stdout}
 }
 
+// Writer returns the underlying io.Writer.
 func (r *TableRenderer) Writer() io.Writer { return r.w }
 
 func (r *TableRenderer) hasGum() bool {
@@ -29,63 +32,68 @@ func (r *TableRenderer) hasGum() bool {
 	return err == nil
 }
 
+// Header writes a styled section heading, falling back to plain text when gum is unavailable.
 func (r *TableRenderer) Header(title string) {
 	if !r.hasGum() {
-		fmt.Fprintf(r.w, "\n=== %s ===\n\n", title)
+		_, _ = fmt.Fprintf(r.w, "\n=== %s ===\n\n", title)
 		return
 	}
 	args := []string{"style", "--border", "double", "--margin", "1 0", "--padding", "0 1", "--align", "center", "--foreground", "#00D7FF", title}
-	out, err := exec.Command("gum", args...).Output()
+	out, err := exec.CommandContext(context.Background(), "gum", args...).Output()
 	if err != nil {
-		fmt.Fprintf(r.w, "\n=== %s ===\n\n", title)
+		_, _ = fmt.Fprintf(r.w, "\n=== %s ===\n\n", title)
 		return
 	}
-	fmt.Fprint(r.w, string(out))
+	_, _ = fmt.Fprint(r.w, string(out))
 }
 
+// Subheader writes a styled subsection heading, falling back to plain text when gum is unavailable.
 func (r *TableRenderer) Subheader(title string) {
 	if !r.hasGum() {
-		fmt.Fprintf(r.w, "\n%s\n", title)
+		_, _ = fmt.Fprintf(r.w, "\n%s\n", title)
 		return
 	}
 	args := []string{"style", "--border", "rounded", "--margin", "1 0 0 0", "--padding", "0 1", "--foreground", "#FFD700", title}
-	out, err := exec.Command("gum", args...).Output()
+	out, err := exec.CommandContext(context.Background(), "gum", args...).Output()
 	if err != nil {
-		fmt.Fprintf(r.w, "\n%s\n", title)
+		_, _ = fmt.Fprintf(r.w, "\n%s\n", title)
 		return
 	}
-	fmt.Fprint(r.w, string(out))
+	_, _ = fmt.Fprint(r.w, string(out))
 }
 
+// Line writes a styled text line, falling back to plain text when gum is unavailable.
 func (r *TableRenderer) Line(text string) {
 	if !r.hasGum() {
-		fmt.Fprintln(r.w, text)
+		_, _ = fmt.Fprintln(r.w, text)
 		return
 	}
 	args := []string{"style", "--foreground", "#A0A0A0", text}
-	out, err := exec.Command("gum", args...).Output()
+	out, err := exec.CommandContext(context.Background(), "gum", args...).Output()
 	if err != nil {
-		fmt.Fprintln(r.w, text)
+		_, _ = fmt.Fprintln(r.w, text)
 		return
 	}
-	fmt.Fprint(r.w, string(out))
+	_, _ = fmt.Fprint(r.w, string(out))
 }
 
+// Print writes text without a trailing newline.
 func (r *TableRenderer) Print(text string) {
-	fmt.Fprint(r.w, text)
+	_, _ = fmt.Fprint(r.w, text)
 }
 
+// Table renders a bordered table using gum, falling back to plain text when gum is unavailable.
 func (r *TableRenderer) Table(headers []string, rows [][]string) {
 	plain := buildPlainTable(headers, rows)
 	if r.hasGum() {
-		style := exec.Command("gum", "style", "--border", "rounded", "--padding", "0 1", "--margin", "0 0", "--foreground", "#90EE90")
+		style := exec.CommandContext(context.Background(), "gum", "style", "--border", "rounded", "--padding", "0 1", "--margin", "0 0", "--foreground", "#90EE90")
 		style.Stdin = bytes.NewBufferString(plain)
 		if out, err := style.Output(); err == nil {
-			fmt.Fprint(r.w, string(out))
+			_, _ = fmt.Fprint(r.w, string(out))
 			return
 		}
 	}
-	fmt.Fprint(r.w, plain)
+	_, _ = fmt.Fprint(r.w, plain)
 }
 
 func buildPlainTable(headers []string, rows [][]string) string {

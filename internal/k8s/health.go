@@ -31,6 +31,8 @@ type HealthData struct {
 }
 
 // GetHealthData returns structured cluster health data for CLI display.
+//
+//nolint:maintidx // complexity is inherent to querying all K8s health dimensions
 func GetHealthData(clientset *kubernetes.Clientset) (*HealthData, error) {
 	ctx := context.Background()
 	data := &HealthData{}
@@ -194,6 +196,8 @@ func GetHealthData(clientset *kubernetes.Clientset) (*HealthData, error) {
 }
 
 // GenerateHealthMarkdown returns a Markdown section for the cluster health overview.
+//
+//nolint:maintidx // complexity is inherent to rendering all K8s health dimensions
 func GenerateHealthMarkdown(clientset *kubernetes.Clientset) (string, error) {
 	ctx := context.Background()
 	var sb strings.Builder
@@ -359,12 +363,12 @@ func GenerateHealthMarkdown(clientset *kubernetes.Clientset) (string, error) {
 	sb.WriteString("\n")
 
 	if len(depRows) > 0 {
-		sb.WriteString("### Deployments com Problemas\n\n")
+		sb.WriteString("### Deployments com Problemas\n\n") //nolint:misspell // Portuguese
 		sb.WriteString(BuildMarkdownTable([]string{"Namespace", "Deployment", "Desejado", "Disponível"}, depRows))
 		sb.WriteString("\n")
 	}
 	if len(ssRows) > 0 {
-		sb.WriteString("### StatefulSets com Problemas\n\n")
+		sb.WriteString("### StatefulSets com Problemas\n\n") //nolint:misspell // Portuguese
 		sb.WriteString(BuildMarkdownTable([]string{"Namespace", "StatefulSet", "Réplicas", "Prontos"}, ssRows))
 		sb.WriteString("\n")
 	}

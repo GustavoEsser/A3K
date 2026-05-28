@@ -47,7 +47,7 @@ func Generate(
 	sb.WriteString(title)
 	sb.WriteString("*Gerado em " + time.Now().Format(time.RFC1123) + "*\n\n")
 	sb.WriteString("Gerado com: A3K\n\n")
-	sb.WriteString("Autor: " + author + "\n\n")
+	sb.WriteString("Autor: " + author + "\n\n") //nolint:misspell // Portuguese
 	sb.WriteString("---\n\n")
 
 	// ToC
@@ -74,11 +74,11 @@ func Generate(
 
 	// Nodes
 	sb.WriteString("## Detalhes dos Nodes 🖥️\n\n")
-	sb.WriteString("Esta seção apresenta um panorama dos nodes que compõem o cluster, incluindo recursos de CPU e memória disponíveis, sistema operacional em uso, versão do kubelet e provedor. Essas informações permitem avaliar a capacidade total de infraestrutura, identificar a distribuição de workloads e apoiar decisões relacionadas a escalabilidade, manutenção e otimização do ambiente Kubernetes.\n\n")
+	sb.WriteString("Esta seção apresenta um panorama dos nodes que compõem o cluster, incluindo recursos de CPU e memória disponíveis, sistema operacional em uso, versão do kubelet e provedor. Essas informações permitem avaliar a capacidade total de infraestrutura, identificar a distribuição de workloads e apoiar decisões relacionadas a escalabilidade, manutenção e otimização do ambiente Kubernetes.\n\n") //nolint:misspell // Portuguese
 	sb.WriteString("### Resumo de Recursos\n\n")
 	sb.WriteString("| Recurso | Total |\n| --- | --- |\n")
-	sb.WriteString(fmt.Sprintf("| CPU | %s |\n", nodes.TotalCPU))
-	sb.WriteString(fmt.Sprintf("| Memória | %s |\n\n", nodes.TotalMemory))
+	fmt.Fprintf(&sb, "| CPU | %s |\n", nodes.TotalCPU)
+	fmt.Fprintf(&sb, "| Memória | %s |\n\n", nodes.TotalMemory)
 	sb.WriteString("### Lista de Nodes\n\n")
 	nodeRows := make([][]string, 0, len(nodes.Nodes))
 	for _, n := range nodes.Nodes {

@@ -153,18 +153,18 @@ func vendorFromImage(image string) string {
 
 func addControllerImages(namespace, kind, name string, spec corev1.PodSpec, bitnamiCtrls *[]ImageEntry, legacyCtrls *[]ImageEntry) {
 	for _, c := range spec.InitContainers {
-		v := vendorFromImage(c.Image)
-		if v == "bitnami" {
+		switch vendorFromImage(c.Image) {
+		case "bitnami":
 			*bitnamiCtrls = append(*bitnamiCtrls, ImageEntry{namespace, kind, name, c.Name, c.Image})
-		} else if v == "bitnamilegacy" {
+		case "bitnamilegacy":
 			*legacyCtrls = append(*legacyCtrls, ImageEntry{namespace, kind, name, c.Name, c.Image})
 		}
 	}
 	for _, c := range spec.Containers {
-		v := vendorFromImage(c.Image)
-		if v == "bitnami" {
+		switch vendorFromImage(c.Image) {
+		case "bitnami":
 			*bitnamiCtrls = append(*bitnamiCtrls, ImageEntry{namespace, kind, name, c.Name, c.Image})
-		} else if v == "bitnamilegacy" {
+		case "bitnamilegacy":
 			*legacyCtrls = append(*legacyCtrls, ImageEntry{namespace, kind, name, c.Name, c.Image})
 		}
 	}
@@ -172,18 +172,18 @@ func addControllerImages(namespace, kind, name string, spec corev1.PodSpec, bitn
 
 func addPodImages(namespace string, p corev1.Pod, bitnamiPods *[]ImageEntry, legacyPods *[]ImageEntry) {
 	for _, c := range p.Spec.InitContainers {
-		v := vendorFromImage(c.Image)
-		if v == "bitnami" {
+		switch vendorFromImage(c.Image) {
+		case "bitnami":
 			*bitnamiPods = append(*bitnamiPods, ImageEntry{namespace, "", p.Name, c.Name, c.Image})
-		} else if v == "bitnamilegacy" {
+		case "bitnamilegacy":
 			*legacyPods = append(*legacyPods, ImageEntry{namespace, "", p.Name, c.Name, c.Image})
 		}
 	}
 	for _, c := range p.Spec.Containers {
-		v := vendorFromImage(c.Image)
-		if v == "bitnami" {
+		switch vendorFromImage(c.Image) {
+		case "bitnami":
 			*bitnamiPods = append(*bitnamiPods, ImageEntry{namespace, "", p.Name, c.Name, c.Image})
-		} else if v == "bitnamilegacy" {
+		case "bitnamilegacy":
 			*legacyPods = append(*legacyPods, ImageEntry{namespace, "", p.Name, c.Name, c.Image})
 		}
 	}

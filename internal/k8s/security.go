@@ -149,7 +149,7 @@ func GenerateSecurityAuditMarkdown(clientset *kubernetes.Clientset) (string, err
 
 	var sb strings.Builder
 	sb.WriteString("## Auditoria de Segurança 🔒\n\n")
-	sb.WriteString("Esta seção analisa a postura de segurança dos workloads do cluster, identificando configurações que podem expor o ambiente a riscos. As verificações cobrem contextos de segurança dos containers, permissões excessivas e exposição de namespaces do host.\n\n")
+	sb.WriteString("Esta seção analisa a postura de segurança dos workloads do cluster, identificando configurações que podem expor o ambiente a riscos. As verificações cobrem contextos de segurança dos containers, permissões excessivas e exposição de namespaces do host.\n\n") //nolint:misspell // Portuguese
 
 	if len(result.Findings) == 0 {
 		sb.WriteString("✅ Nenhuma configuração de segurança problemática encontrada.\n")
@@ -184,7 +184,7 @@ func GenerateSecurityAuditMarkdown(clientset *kubernetes.Clientset) (string, err
 			}
 		}
 		if len(rows) > 0 {
-			sb.WriteString(fmt.Sprintf("### %s\n\n", severityLabels[severity]))
+			fmt.Fprintf(&sb, "### %s\n\n", severityLabels[severity])
 			sb.WriteString(BuildMarkdownTable([]string{"Namespace", "Kind", "Name", "Container", "Problema"}, rows))
 			sb.WriteString("\n")
 		}

@@ -90,7 +90,7 @@ func GenerateIngressesMarkdown(clientset *kubernetes.Clientset) (string, error) 
 		}
 
 		if len(rows) > 0 {
-			sb.WriteString(fmt.Sprintf("### %s\n\n", ns.Name))
+			fmt.Fprintf(&sb, "### %s\n\n", ns.Name)
 			sb.WriteString(BuildMarkdownTable([]string{"Name", "Class", "Hosts", "TLS", "Backends"}, rows))
 			sb.WriteString("\n")
 		}

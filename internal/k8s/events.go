@@ -123,7 +123,7 @@ func FormatEventSummaryMarkdown(s *EventSummary) string {
 	if s == nil {
 		return ""
 	}
-	out := "Os eventos no Kubernetes são registros de ocorrências que descrevem mudanças de estado, alertas e informações relevantes sobre objetos do cluster, como pods, nós e deployments. Eles funcionam como um histórico de diagnósticos em tempo real, ajudando a identificar problemas, acompanhar falhas de execução e entender o comportamento dos workloads ao longo do tempo.\n\n"
+	out := "Os eventos no Kubernetes são registros de ocorrências que descrevem mudanças de estado, alertas e informações relevantes sobre objetos do cluster, como pods, nós e deployments. Eles funcionam como um histórico de diagnósticos em tempo real, ajudando a identificar problemas, acompanhar falhas de execução e entender o comportamento dos workloads ao longo do tempo.\n\n" //nolint:misspell // Portuguese
 	out += fmt.Sprintf("- Total Events: %d\n", s.Total)
 	out += fmt.Sprintf("- Warning Events: %d\n", s.Warnings)
 	out += fmt.Sprintf("- Normal Events: %d\n\n", s.Normals)
