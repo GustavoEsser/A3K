@@ -62,6 +62,13 @@ linters:
         - "github.com/flysecurity/a3k/*"
         - "github.com/spf13/cobra"
 
+  exclusions:
+    rules:
+      - path: _test\.go
+        linters: [gosec, errcheck, wrapcheck]
+      - path: main\.go
+        linters: [revive]
+
 formatters:
   enable:
     - gofmt
@@ -70,9 +77,3 @@ formatters:
 issues:
   max-issues-per-linter: 50
   max-same-issues: 5
-  exclusions:
-    rules:
-      - path: _test\.go
-        linters: [gosec, errcheck, wrapcheck]
-      - path: main\.go
-        linters: [revive]
