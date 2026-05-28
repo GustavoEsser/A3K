@@ -9,31 +9,31 @@ linters:
   default: none
   enable:
     # Correctness
-    - errcheck        # unchecked errors
-    - govet           # go vet
-    - staticcheck     # staticcheck SA rules
-    - ineffassign     # assignments with no effect
-    - unused          # unused code
+    - errcheck
+    - govet
+    - staticcheck
+    - ineffassign
+    - unused
 
     # Security
-    - gosec           # security issues (G101..G602)
+    - gosec
 
     # Style / quality
-    - revive          # opinionated golint replacement
-    - misspell        # spelling mistakes in comments/strings
-    - gocritic        # various checks
+    - revive
+    - misspell
+    - gocritic
 
     # Error handling
-    - wrapcheck       # errors from external packages should be wrapped
-    - errorlint       # common error handling mistakes
+    - wrapcheck
+    - errorlint
 
     # Context
-    - noctx           # http requests without context
+    - noctx
 
     # Maintainability
-    - cyclop          # cyclomatic complexity
-    - gocognit        # cognitive complexity
-    - maintidx        # maintainability index
+    - cyclop
+    - gocognit
+    - maintidx
 
   settings:
     errcheck:
@@ -42,8 +42,8 @@ linters:
 
     gosec:
       excludes:
-        - G304  # file inclusion via variable — intentional for kubeconfig path
-        - G204  # subprocess with variable args — intentional for gum CLI tool
+        - G304  # kubeconfig path variable — intentional
+        - G204  # gum subprocess with variable args — intentional
 
     revive:
       rules:
@@ -52,7 +52,7 @@ linters:
             - disableStutteringCheck
 
     cyclop:
-      max-complexity: 60  # K8s data processing functions have inherent complexity
+      max-complexity: 60
 
     gocognit:
       min-complexity: 130
@@ -68,39 +68,11 @@ formatters:
     - goimports
 
 issues:
-  exclude-rules:
-    # Tests have different standards
-    - path: _test\.go
-      linters: [gosec, errcheck, wrapcheck]
-
-    # Main entrypoint — os.Exit is fine
-    - path: main\.go
-      linters: [revive]
-
-    # internal/k8s — high complexity is inherent to Kubernetes domain processing
-    - path: internal/k8s/
-      linters: [maintidx]
-
-    # internal/output — writes to os.Stdout, fmt.Fprint* errors are not actionable
-    - path: internal/output/
-      linters: [errcheck]
-
-    # internal/ packages are not public API — exported doc comments not required
-    - path: internal/
-      linters: [revive]
-      text: exported
-
-    # Portuguese words in Kubernetes report strings — not English misspellings
-    - linters: [misspell]
-      text: '`Problemas` is a misspelling'
-    - linters: [misspell]
-      text: '`Eles` is a misspelling'
-    - linters: [misspell]
-      text: '`contextos` is a misspelling'
-    - linters: [misspell]
-      text: '`Autor` is a misspelling'
-    - linters: [misspell]
-      text: '`operacional` is a misspelling'
-
   max-issues-per-linter: 50
   max-same-issues: 5
+  exclusions:
+    rules:
+      - path: _test\.go
+        linters: [gosec, errcheck, wrapcheck]
+      - path: main\.go
+        linters: [revive]
